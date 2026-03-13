@@ -1,0 +1,12 @@
+every use of terabyte actually means tebibyte (1099511627776 bytes)
+
+first two terabytes: HDD/SSD 0
+all following blocks up to 128 terabytes are the same structure, just different drives
+
+128-129 terabytes: RAM, modulo'd by 128 gigabytes (so gigabyte 129 actually maps to gigabyte 1)
+
+now here comes the interesting part(which will also be receiving updates as I add more stuff)
+
+note: all indexes here are starting at byte 141,836,999,983,104 (129 terabytes)
+byte 0: OS port (serial port for boot io stream)
+

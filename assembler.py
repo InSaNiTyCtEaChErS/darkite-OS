@@ -125,7 +125,7 @@ def main(lines):
                 output += enc(out)
                 linecount += 1
             elif out[0] == "{":
-              out = out.rstrip()
+                out = out.rstrip()
                 output += ("0000000"+bin(int(out[1:-1]))[2:])[-8:]
                 linecount += 0.25
             elif out[0] == ">": #label saving

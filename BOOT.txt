@@ -1,12 +1,12 @@
 ;file header
-/00000000001000110000000001000101; have to mash the 'E' from EXFAT with a "brai" opcode. branches 34 instructions forwards.
+/00000000000010011000000001000101; have to mash the 'E' from EXFAT with a "brai" opcode. branches 34 instructions forwards.
 @XFAT   ;merge the rest of the EXFAT tag with this monstrosity
 ;53 byte zero for mustbezero field
-/0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+/00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 ;partition offset, aka 0
 /0000000000000000000000000000000000000000000000000000000000000000
 ;volume length, in 512 byte sectors
-/add here (this line is to trigger a assembler crash)
+/00000000000000000000000000000000;add here (this line is to trigger a assembler crash)
 ;fat offset from start of partition, in sectors
 /00000000000000000000000000100000
 ;size of each fat / 512
@@ -40,9 +40,9 @@
 {0}
 {0}
 ;boot code goes here, up to 97 instructions, one based
-spec 3;nop because this instruction is skipped
-spec 3;same thing
-;95
+{0};two padding bytes to fix alignment
+{0}
+@                                                                                                                                                ;comments to make sure lines encode properly, just accounting for skipped over instructions
 
 ;the following assembly performs the checksum
 ;for (Index = 0; Index < NumberOfBytes; Index++)
@@ -54,80 +54,72 @@ spec 3;same thing
 ;    Checksum = ((Checksum&1) ? 0x80000000 : 0) + (Checksum>>1) + (UInt32)Sectors[Index];
 ;  }
 
+
 sub r0,r0,r0;byte to load
 sub r1,r1,r1;checksum value
+subi r2,r2,r2
+subi r2,r2,r2
+subi r4,r4,r4
+subi r5,r5,r5
 addi r2, 32768, r2 ;set the high bit of r2
-muli r2,128,r2
-lph r0
-;90
+roli r2,16,r2
+lup r0
 addi r5, 512, r5
 muli r5, 11, r5
 sub r29,r29,r29
-    lp r29
+    llp r29
     addi r29,1,r29
-;85
     cmpi r29,106
     bnei -4
         cmpi r29,107
         bnei -6
             cmpi r29,112
-;80
             bnei -8
                 andi r0,1,r3
                 cmpi r3,1
                 bnei 1
-                subi r4,r4,r4
-;75
+                    subi r4,r4,r4
                 bei 1
-                add r2, r0, r0
-                roli r0,1,r0
+                    add r2, r0, r0
+                rori r0,1,r0
                 load r4
                 add r0,r4,r0
-;70
                 cmp r29, r5
                 bli -19
-                ;verify boot
-                subi r29,r29,r29
-                addi r29,510,r29
-                load r1
-;65
-                addi r29,1,r29
-                load r2
+                    ;verify boot
+                    subi r29,r29,r29
+                    addi r29,510,r29
+                    load r1
+                    addi r29,1,r29
+                    load r2
 brai 2
 @darkite ;comment to make sure this parses properly. also used for PC hardware check
-;60
-lpc r0
-subi r0,1,r0
-lp r0
-load r1
-;55
-addi r0,1,r0
+;loop to print out the previous text to serial output
+subi r1,r1,r1
+addi r1,220,r1
+;loop start
+
+llp r1
 load r2
-
-
-;50
-
-
-;file load name address
-
-
-;file store name address
-
-
-;file store bump name address
-
-
-;jump assembler
-brai 1
+addi r1,1,r1
+<serialio_byte
+call
+brai -10
+brai 13
+@datadatadatadatadatadatadatadatadatadatadatadata;garbage data to fill these instructions:3
 {0} ;padding
 {0}
 {85};end FAT header
 {136}
+printcount ;make sure this is 128, first printed number
+
 
 ;127 instructions for extended boot, one based
 
 
+>serialio_byte
 
+ret
 
 
 

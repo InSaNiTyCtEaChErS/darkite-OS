@@ -7,9 +7,11 @@ simple assembly based operating system for my custom cpu. includes assembly docu
 ```
 #ALIAS {instruction} %a %b... : {instructions with %a,b,c replacing registers in desired order}
 #ALIAS means comment this line out and define an instruction alias.
-{instruction} is the name for the alias. must be one continuous word, no spaces. NOTE: the %a,%b... must be in order!
+{instruction} is the name for the alias. must be one continuous word, no spaces.
+NOTE: the %a,%b... must be in order!
 %a/%b are the argument(s) of the instruction. you can have up to 52 of these.
-{instructions with %a,b,c replacing registers in desired order} is the instructions to actually execute, with %a,%b... being replaced with supplied values.
+{instructions with %a,b,c replacing registers in desired order} is the instructions to
+actually execute, with %a,%b... being replaced with supplied values.
 ```
 example:
 ```
@@ -29,7 +31,8 @@ example:
 ### {int}
 ```
 {0}
-insert 8-bit integers directly into data. MAKE SURE TO KEEP DATA DOUBLE WORD ALIGNED. PC CANNOT BRANCH OR JUMP OFF OF WORD ALIGNMENT.
+insert 8-bit integers directly into data. MAKE SURE TO KEEP DATA DOUBLE WORD ALIGNED.
+PC CANNOT BRANCH OR JUMP OFF OF WORD ALIGNMENT.
 ```
 example:
 ```
@@ -41,7 +44,8 @@ example:
 ### @characters
 ```
 @I AM A STRING!!!
-insert 8-bit ascii characters directly into data. MAKE SURE TO KEEP DATA DOUBLE WORD ALIGNED. PC CANNOT BRANCH OR JUMP OFF OF WORD ALIGNMENT.
+insert 8-bit ascii characters directly into data. MAKE SURE TO KEEP DATA DOUBLE WORD ALIGNED.
+PC CANNOT BRANCH OR JUMP OFF OF WORD ALIGNMENT.
 
 THESE INCLUDE ANY TRAILING SPACES
 ```

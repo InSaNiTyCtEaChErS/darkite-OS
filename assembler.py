@@ -104,6 +104,16 @@ def main(lines):
                     instruction_alias.append(line.count("/n")+1)
                 elif line[0:line.find(" ")] in instruction_alias: #loading of aliases
                     labelcount += instruction_alias[instruction_alias.index(line[0:line.find(" ")])+1]
+                elif line[0] == "/":
+                    try:
+                        labelcount += len(line[1:line.find(";")])/32
+                    except:
+                        labelcount += len(line[1:].strip())/32
+                elif line[0] == "@":
+                    try:
+                        labelcount += len(line[1:line.find(";")])/32
+                    except:
+                        labelcount += len(line[1:].strip())/32
         linecount3 += 1
     print_("\n encoding \n")
     for line in lines:
@@ -186,16 +196,4 @@ def main(lines):
         linecount2 += 1
     return output
 
-foo = ""
-"/home/kitty/Downloads/code/OS/C_compiler.txt"
-file_to_load = "/home/kitty/Downloads/code/OS/encoder_v3.txt" #replace this with the desired file to encode
-
-with open(file_to_load,"r") as file: #input file
-    foo = file.read()
-
-output = main(foo)
-output = output.strip()
-with open("/home/kitty/Downloads/code/OS/output.txt","w") as file: #output file, please open in a text editor with line wrapping
-    file.write(output)
-with open("/home/kitty/Downloads/code/OS/prints.txt","w") as file: #print logging file
-    file.write(prints)
+output = main(file) #REPLACE THIS WITH YOUR ASSEMBLY

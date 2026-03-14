@@ -67,9 +67,10 @@ labels can be used before they're defined
 ```
 example
 ```
-<jump_to_a_label_like_this
+<jump_to_a_label_like_this ;with a jump instruction
 jmp
-<call_a_label_like_this
+
+<call_a_label_like_this ;with a call instruction
 call
 ```
 

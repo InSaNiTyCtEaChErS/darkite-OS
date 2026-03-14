@@ -3,6 +3,10 @@ simple assembly based operating system for my custom cpu. includes assembly docu
 
 # useful functions when writing code for this
 
+### THE MANUAL
+
+https://github.com/InSaNiTyCtEaChErS/darkite-OS/blob/main/ASM.txt
+
 ### #ALIAS:
 ```
 #ALIAS {instruction} %a %b... : {instructions with %a,b,c replacing registers in desired order}

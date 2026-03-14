@@ -54,6 +54,7 @@ Hidden registers (inacessible by instructions directly except where needed for t
         low (1 bit)
 
 Instructions (in opcode order)
+
     ALU 		#all alu operations work on two registers and return to a third register.
     add		#add 
     awc		#add with carry flag
@@ -63,7 +64,6 @@ Instructions (in opcode order)
     and		#bitwise AND
     rol		#rotate left
     ror		#rotate right
-    
     
     COND		#branches and jumps
     jum		#jump always. 
@@ -85,7 +85,6 @@ Instructions (in opcode order)
     llp		#load lower pointer.
     lup		#load upper pointer.
     
-    
     SPECIAL
     lpc		#load lower 32 bits of program counter.
     lupc 	#load upper 16 bits of program counter.
@@ -95,3 +94,23 @@ Instructions (in opcode order)
     key		#load the last interrupt value
     nand	#bitwise nand two values.
     lui		#load upper immediate; load the higher 16 bits of a register with an immediate value.
+
+
+instructions are formatted like this: (all arguments are optional except opcode)
+
+    opcode rs1,rs2,rd
+    or
+    opcode rs1,immediate,rd
+
+
+some instructions don't use these though.
+    
+    branches only take a register/immediate amount to branch, as well as LLP, LUP, and STORE
+    
+    IOIO, CALL,and RET take zero arguments
+    
+    LPC,LUPC, PULL, STORE, and KEY all take one register destination argument
+    
+    and lastly CMP takes two register arguments or a register and an immediate.
+
+

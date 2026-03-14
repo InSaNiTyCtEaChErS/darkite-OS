@@ -1,4 +1,4 @@
-;file header
+;file header <3
 /00000000000010011000000001000101; have to mash the 'E' from EXFAT with a "brai" opcode. branches 34 instructions forwards.
 @XFAT   ;merge the rest of the EXFAT tag with this monstrosity
 ;53 byte zero for mustbezero field
@@ -6,7 +6,7 @@
 ;partition offset, aka 0
 /0000000000000000000000000000000000000000000000000000000000000000
 ;volume length, in 512 byte sectors
-/00000000000000000000000000000000;add here (this line is to trigger a assembler crash)
+/00000000000000000000000000000000;add here
 ;fat offset from start of partition, in sectors
 /00000000000000000000000000100000
 ;size of each fat / 512
@@ -116,9 +116,10 @@ printcount ;make sure this is 128, first printed number
 
 ;127 instructions for extended boot, one based
 
-
 >serialio_byte
+push r1
 
+pull r1
 ret
 
 

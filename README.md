@@ -1,6 +1,8 @@
 # darkite-OS
 simple assembly based operating system for my custom cpu. includes assembly documentation for any contributors.
 
+🧋boba to attract minibitt
+
 # useful functions when writing code for this
 
 ### THE MANUAL

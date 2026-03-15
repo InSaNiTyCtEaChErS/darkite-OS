@@ -1,7 +1,12 @@
-assembly and implementation documentation
+# assembly and implementation documentation
 
+### definitions:
 
-Registers
+Branch: a RELATIVE jump
+
+Jump: an ABSOLUTE jump
+
+### Registers
     r0  00000 #can be written to, but should always be zero.
     r1  00001
     r2  00010
@@ -35,7 +40,7 @@ Registers
     r30 11110
     r31 11111
 
-Hidden registers (inacessible by instructions directly except where needed for the instruction to function):
+### Hidden registers (inacessible by instructions directly except where needed for the instruction to function):
     pointer registers:
         Pl (32 bit) (lower 32 bits of the address pointer)
         Ph (16 bit) (upper 16 bits of the address pointer)
@@ -53,7 +58,16 @@ Hidden registers (inacessible by instructions directly except where needed for t
         less (1 bit)
         low (1 bit)
 
-Instructions (in opcode order)
+### Quirks:
+    any instruction with a greater than 32 "immediate" without the immediate bit set raises a -1 value interrupt 
+    (or unsigned, 4294967295)
+
+    immediates are always sign extended
+
+    16 bit immediates are sign extended to 48 bit for branches
+
+
+### Instructions (in opcode order)
 
     ALU 		#all alu operations work on two registers and return to a third register.
     add		#add 
@@ -96,7 +110,7 @@ Instructions (in opcode order)
     lui		#load upper immediate; load the higher 16 bits of a register with an immediate value.
 
 
-instructions are formatted like this: (all arguments are optional except opcode)
+### instructions are formatted like this: (all arguments are optional except opcode)
 
     opcode rs1,rs2,rd
     or

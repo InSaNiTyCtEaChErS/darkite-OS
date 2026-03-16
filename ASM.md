@@ -6,40 +6,39 @@ Branch: a RELATIVE jump
 
 Jump: an ABSOLUTE jump
 
-### Registers
-    r0  00000 #can be written to, but should always be zero.
-    r1  00001
-    r2  00010
-    r3  00011
-    r4  00100
-    r5  00101
-    r6  00110
-    r7  00111
-    r8  01000
-    r9  01001
-    r10 01010
-    r11 01011
-    r12 01100
-    r13 01101
-    r14 01110
-    r15 01111
-    r16 10000
-    r17 10001
-    r18 10010
-    r19 10011
-    r20 10100
-    r21 10101
-    r22 10110
-    r23 10111
-    r24 11000
-    r25 11001
-    r26 11010
-    r27 11011
-    r28 11100
-    r29 11101
-    r30 11110
-    r31 11111
+.
+### Quirks/features:
+any instruction with a greater than 32 "immediate" without the immediate bit set raises a -1 value interrupt (or unsigned, 4294967295)
 
+immediates are always sign extended from 16 bits to 32 bits
+16 bit immediates are sign extended to 48 bit for branches
+
+no paging, everything is one continuous space
+there are no different operating modes. 
+the cpu is single-core. 
+
+PC is 48-bit and counts by one.
+branches also go by instruction, with current instruction included for backwards branches
+
+.
+### interrupts
+
+all interrupts jump to the last used INTE instruction when triggered, and produce an interrupt value
+
+keyboard interrupts give values 256-511 depending on the key (mapping is undecided yet, but will likely use ascii)
+invalid instructions give a value of -1 (about 4 billion unsigned)
+
+.
+### flags
+
+refer to **hidden registers** and **memory map.md**
+
+.
+### Registers
+
+32x 32 bit wide registers. no zero register, though r0 is generally kept at 0
+
+.
 ### Hidden registers (inacessible by instructions directly except where needed for the instruction to function):
     pointer registers:
         Pl (32 bit) (lower 32 bits of the address pointer)
@@ -58,16 +57,8 @@ Jump: an ABSOLUTE jump
         less (1 bit)
         low (1 bit)
 
-### Quirks:
-    any instruction with a greater than 32 "immediate" without the immediate bit set raises a -1 value interrupt 
-    (or unsigned, 4294967295)
 
-    immediates are always sign extended
-
-    16 bit immediates are sign extended to 48 bit for branches
-
-
-### Instructions (in opcode order)
+### Instruction set (in opcode order)
 
     ALU 		#all alu operations work on two registers and return to a third register.
     add		#add 
@@ -90,7 +81,7 @@ Jump: an ABSOLUTE jump
     bb		#branch if a is below b. takes one register argument as the amount to branch (signed).
     
     EXTRA 	#various extras, mainly for the OS
-    ioio	#sets the address to jump to on interrupt on io inputs.	
+    INTE	#sets the address to jump to on interrupt on io inputs.	
     call	#force an interrupt.
     ret		#return from an interrupt/jump.
     push	#push a register to the stack.
@@ -123,7 +114,7 @@ some instructions don't use these though.
     
     IOIO, CALL,and RET take zero arguments
     
-    LPC,LUPC, PULL, STORE, and KEY all take one register destination argument
+    LPC,LUPC, PULL, LOAD, and KEY all take one register destination argument
     
     and lastly CMP takes two register arguments or a register and an immediate.
 

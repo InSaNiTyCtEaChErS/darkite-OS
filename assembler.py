@@ -99,9 +99,11 @@ def main(lines):
                     labels.append(labelcount)
                 elif line[0] == "<": #loading of labels
                     labelcount += 5
-                elif line[0] == "#": #define aliases
+                elif line[0:5] == "#ALIAS": #define aliases
                     instruction_alias.append(line[line.find(" "):line.find(" : ")])
                     instruction_alias.append(line.count("/n")+1)
+                elif line[0:5] == "#RESBY":
+                    labelcount += line.split()[1]
                 elif line[0:line.find(" ")] in instruction_alias: #loading of aliases
                     labelcount += instruction_alias[instruction_alias.index(line[0:line.find(" ")])+1]
                 elif line[0] == "/":
@@ -169,6 +171,10 @@ def main(lines):
                 out = out.split()
                 constants.append(out[1])
                 constants.append(out[3])
+            elif out[0:5] == "#RESBY": #handle reserving bytes
+                linecount += out.split()[1]
+                for i in range(out.split()[1]):
+                    out += "00000000"
             if out.find(" ") != -1:
                 if out[0:out.find(" ")] in instruction_aliases: #handle instruction aliases
                     out = out.replace(","," ")

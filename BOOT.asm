@@ -116,19 +116,6 @@ printcount ;make sure this is 128, first printed number
 
 ;127 instructions for extended boot, one based
 
->serialio_byte
-push r1
-
-pull r1
-ret
-
->disp_ascii
-psuh r2
-push r3
-
-pull r2
-pull r3
-ret
 
 
 

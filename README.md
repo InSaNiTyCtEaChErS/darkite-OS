@@ -1,7 +1,7 @@
 # darkite-OS
 simple assembly based operating system for my custom cpu. includes assembly documentation for any contributors.
 
-🧋boba to attract minbitt
+
 
 # useful functions when writing code for this
 
@@ -76,4 +76,12 @@ jmp
 call
 ```
 
+### #RESBY
+```
+reserve some number of bytes as zero, also useful for padding large areas
+```
+example
+```
+resby 512 ;reserves 512 bytes for whatever
+```
 

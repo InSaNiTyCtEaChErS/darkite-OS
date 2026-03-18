@@ -7,12 +7,12 @@
         0: syson/off LED
         1: sysbooting LED
         2: error LED/invvalid instruction hit
-        3: clear error LED
+        3: stack error LED/stack or fp overflow
         4: RAM issue LED
         5: GPU issue LED
-        6: serial port unconnected
-        7: unused for now, bound to be edited eventually
-
+        6: serial port unconnected LED
+        7: pc increment LED 
+        
 ### byte 1: FLAGS
     bits:
         0: carry flag

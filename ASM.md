@@ -15,7 +15,7 @@ immediates are always sign extended from 16 bits to 32 bits
 
 no paging, everything is one continuous space
 there are no different operating modes. 
-the cpu is single-core. 
+the cpu is going to be multi-core, with one thread per core, and one program per thread. (two cores required at minimum)
 
 PC is 48-bit and counts by one.
 branches also go by instruction, with current instruction included for backwards branches
@@ -23,12 +23,21 @@ branches also go by instruction, with current instruction included for backwards
 .
 ### interrupts
 
-all interrupts jump to the last used INTE instruction when triggered, and produce an interrupt value
+Interrupts jump to address 20.
 
-keyboard interrupts give values 256-511 depending on the key (mapping is undecided yet, but will likely use ascii)
+keyboard interrupts give values 0-255 depending on the key (mapping is undecided yet, but will likely use ascii)
+
 invalid instructions give a value of -1 (about 4 billion unsigned)
+stack and fp overflows give a value of -2
+keyboard interrupts only go to the main core, and negative interrupt values are in-core interrupts as well.
+
 
 .
+### inter-processor communication
+
+TODO: DECIDE HOW THIS WORKS
+
+
 ### flags
 
 refer to **hidden registers** and **memory map.md**
@@ -81,24 +90,8 @@ refer to **hidden registers** and **memory map.md**
     bb		#branch if a is below b. takes one register argument as the amount to branch (signed).
     
     EXTRA 	#various extras, mainly for the OS
-    INTE	#sets the address to jump to on interrupt on io inputs.	
-    call	#force an interrupt.
-    ret		#return from an interrupt/jump.
-    push	#push a register to the stack.
-    pull	#pull a register from the stack.
-    cmp		#compare two registers
-    llp		#load lower pointer.
-    lup		#load upper pointer.
-    
-    SPECIAL
-    lpc		#load lower 32 bits of program counter.
-    lupc 	#load upper 16 bits of program counter.
-    load	#load from a position denoted by the first two arguments, into the third register argument.
-    store 	#store from the third register arguments at the location denoted by the first two.
-    and		#bitwise and two values.
-    key		#load the last interrupt value
-    nand	#bitwise nand two values.
-    lui		#load upper immediate; load the higher 16 bits of a register with an immediate value.
+   
+    TODO: ADD THESE PROPERLY
 
 
 ### instructions are formatted like this: (all arguments are optional except opcode)

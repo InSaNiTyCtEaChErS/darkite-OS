@@ -30,46 +30,48 @@ jmp
 @----------------------------------------------------------------;
 @start typing----meow                                            ;
 ;544 byte offset
-;alpha (higher = more transparent
-{0}
-;red
-{255}
-;green
-{0}
-;blue
-{255}
+
+resby 2048;character buffer
+
+>render
+
+<<code, r5,r6
+>render_loop
+
+load r1
+;add pointer by 1
+addi r5,1,r5
+awci r6,0,r6
+addi r2,1,r2
+
+andi r2,64,r4
+addi r4,r3,r3
+andi r2,63,r2
+
+<disp_ascii
+call
+<render_loop
+cmpi r3,2560
+bgei 1
+jmp
+ret
+
+
 
 >startlabel
 
-;setup color
-clear r4
-addi r4,544
-lp r4
-load r3
-or r3,r1,r1
-addi r4,1,r4
-lp r4
-load r3
-or r3,r1,r1
-addi r4,1,r4
-lp r4
-load r3
-or r3,r1,r1
-addi r4,1,r4
-lp r4
-load r3
-or r3,r1,r1
-addi r4,1,r4
-<color_code
-
-;loop to display all 512 bytes of ascii data
-    lp index
-    addi index,1,index
-    load byte
-    <disp_ascii
-    call
-cmpi index,544
-bgi -11
 
 
 ;spinning loop
+
+cmpi r0,0
+bei -2
+cmpi r0,8
+TODO: backspace character and character addition to temp buffer
+
+
+<render
+call
+
+<startlabela
+

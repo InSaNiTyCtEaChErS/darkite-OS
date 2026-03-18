@@ -1,154 +1,21 @@
-;file header <3
-/00000000000010011000000001000101; have to mash the 'E' from EXFAT with a "brai" opcode. branches 34 instructions forwards.
-@XFAT   ;merge the rest of the EXFAT tag with this monstrosity
-;53 byte zero for mustbezero field
-/00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-;partition offset, aka 0
-/0000000000000000000000000000000000000000000000000000000000000000
-;volume length, in 512 byte sectors
-/00000000000000000000000000000000;add here
-;fat offset from start of partition, in sectors
-/00000000000000000000000000100000
-;size of each fat / 512
-/00000000000000000000000100000000 ;256 sectors of file allocation table
-;offset to cluster heap, in sectors, from start of partition (32(fatoffset) + 512(FATLength) * 1(NumberOfFATs))
-/00000000000000000000001000100000
-;cluster heap count
-/00000000000000000000000000000000
-;The starting cluster of the root directory's cluster chain.
-/00000000000000000000000000000000
-;volume serial number
-@cats;just a silly serial number
-;revision
-/0000000000000001
-;flags
-/0000000000000000
-;bytes per sector shift
-{9}
-;sectors per cluster shift
-{2}
-;number of FATs
-{1}
-;drive select
-/10000000
-;reserved
-{0}
-{0}
-{0}
-{0}
-{0}
-{0}
-{0}
-;boot code goes here, up to 97 instructions, one based
-{0};two padding bytes to fix alignment
-{0}
-@                                                                                                                                                ;comments to make sure lines encode properly, just accounting for skipped over instructions
-
-;the following assembly performs the checksum
-;for (Index = 0; Index < NumberOfBytes; Index++)
-;  {
-;    if ((Index == 106) || (Index == 107) || (Index == 112))
-;    {
-;      continue;
-;    }
-;    Checksum = ((Checksum&1) ? 0x80000000 : 0) + (Checksum>>1) + (UInt32)Sectors[Index];
-;  }
-
-
-sub r0,r0,r0;byte to load
-sub r1,r1,r1;checksum value
-subi r2,r2,r2
-subi r2,r2,r2
-subi r4,r4,r4
-subi r5,r5,r5
-addi r2, 32768, r2 ;set the high bit of r2
-roli r2,16,r2
-lup r0
-addi r5, 512, r5
-muli r5, 11, r5
-sub r29,r29,r29
-    llp r29
-    addi r29,1,r29
-    cmpi r29,106
-    bnei -4
-        cmpi r29,107
-        bnei -6
-            cmpi r29,112
-            bnei -8
-                andi r0,1,r3
-                cmpi r3,1
-                bnei 1
-                    subi r4,r4,r4
-                bei 1
-                    add r2, r0, r0
-                rori r0,1,r0
-                load r4
-                add r0,r4,r0
-                cmp r29, r5
-                bli -19
-                    ;verify boot
-                    subi r29,r29,r29
-                    addi r29,510,r29
-                    load r1
-                    addi r29,1,r29
-                    load r2
-brai 2
-@darkite ;comment to make sure this parses properly. also used for PC hardware check
-;loop to print out the previous text to serial output
-subi r1,r1,r1
-addi r1,220,r1
-;loop start
-
-llp r1
-load r2
-addi r1,1,r1
-<serialio_byte
-call
-brai -10
-brai 13
-@datadatadatadatadatadatadatadatadatadatadatadata;garbage data to fill these instructions:3
-{0} ;padding
-{0}
-{85};end FAT header
-{136}
-printcount ;make sure this is 128, first printed number
-
-
-;127 instructions for extended boot, one based
-
-
-
-
-
-;end extended boot code
-{0}
-{0}
-{85}
-{136}
-printcount ;make sure this is 256, second printed number
-
-;parameters (512 byte zero)
-
-#RESBY 512
-
-
-;8 empty sectors for fat offset.
-
-#RESBY 4096 ;allocate offset :3
-
-
-
-;FAT table
-;media descriptor byte, followed byt #ffffff
-/11111000
-/11111111
-/11111111
-/11111111
-;always #ff bytes
-/11111111
-/11111111
-/11111111
-/11111111
-
-
+brai 19 ;4 byte skipped space at begining of file
+{3};3 tags
+{1};tag length 1(4 bytes)
+@os  ;tag
+{1};tag length 1(4 bytes)
+@.exe;tag
+{3};tag length 3(12 bytes)
+@immutable   ;tag, comment used for proper parsing
+@    ;padding space
+;code goes here
+;file table goes on byte 256 (aka after 64 instructions)
+push r1
+key r1 
+cmpi r1,-1
+bnei 6
+<INVALID_ISNT
+jmp
+<interrupt_matrix
+jmp
+printcount
 

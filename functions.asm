@@ -19,12 +19,15 @@ pull r1
 ret
 
 >disp_ascii
-push r2
 push r3
-    ;display an ASCII character
+push r4
+    ;display an ASCII character at a specified x and y in the framebuffer
+    <<framebuffer r3,r4 ;load framebuffer using registers 3 and 4
+    ;multiply x and y position to get framebuffer index, then add to offset
+    TODO: do above
 
+pull r4
 pull r2
-pull r3
 ret
 
 >serial_color_code
@@ -33,3 +36,9 @@ push r0
 
 pull r0
 ret
+
+
+
+
+>framebuffer
+#RESBY 16200 ;ASCII framebuffer size, each char is one byte, plus one for color

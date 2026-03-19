@@ -30,7 +30,8 @@ jmp
 
 <<code, r5,r6
 >render_loop
-
+lp r2
+lup r3
 load r1
 ;add pointer by 1
 addi r5,1,r5

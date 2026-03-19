@@ -1,3 +1,14 @@
+brai 6 ;4 byte skipped space at begining of file
+{3};3 tags
+{1};tag length 1(4 bytes)
+@func;tag
+{1};tag length 1(4 bytes)
+@.exe;tag
+{3};tag length 3(12 bytes)
+@immutable   ;tag, comment used for proper parsing
+
+
+
 >INVALID_INST
 ;handle invalid instructions on a core
 sub r0,r0,r0

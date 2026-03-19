@@ -1,6 +1,6 @@
 ### every use of terabyte actually means tebibyte (1099511627776 bytes)
 
-# 16 cpu control and status bytes
+# 8 cpu control and status bytes 
 
 ### byte 0: status and control LEDs
     bits:
@@ -24,16 +24,22 @@
         6: constant 0
         7: constant 0
         
-### bytes 2:7:
-    relative pointer register, added to actual pointer
+### bytes 2:7: zero bytes for now
 
-### zero bytes(for now) 8:15
 
-# inputs and outputs
 
-### serial i/o
+# inputs and outputs (24 bytes)
+
+### serial i/o (byte 8)
     port 0: 7 bits of data
         TODO: DECIDE ORDER
+
+### PS/2 connector(byte 12)
+    lower half: KEYBOARD
+    upper half: MOUSE
+
+### VGA graphics connector (byte 16)
+    
 
 # 128:130 terabytes: HDD/SSD 0
 ### all following blocks up to 256 terabytes are the same structure, just different drives. yes, we have a hard cap of two terabyte drives

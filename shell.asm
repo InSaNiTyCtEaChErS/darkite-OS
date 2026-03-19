@@ -9,29 +9,22 @@ brai 6
 @immutable   ;tag 3
 ;end of file header
 
-
-#CONST byte = r0
-#CONST color = r1
-#CONST index = r2
-#ALIAS clear %a : sub %a,%a,%a
-clear byte
-clear index
-addi index,32,index
+addi r7,32,r7
 <startlabel
 jmp
 
 >code
-@______       ___      ______   __   __                          ;
-@|  _  \     / _ \     |  _  |  | | / /  (%%%%%%) (%%%%%%) /%%%%);
-@| | |  |   / / \ \    | |_| |  | |/ /     |%%|     |%%|   \%\   ;
-@| | |  |  / /___\ \   | __  |  |   \      |%%|     |%%|    %%%%);
-@| |_|  | / /     \ \  | | \ \  | |\ \     |%%|     |%%|   /%/   ;
-@|_____/ /_/       \_\ |_|  \_\ |_| \_\  (%%%%%%)   |%%|   \%%%%);
-@----------------------------------------------------------------;
-@start typing----meow                                            ;
+@______       ___      ______   __   __                         
+@|  _  \     / _ \     |  _  |  | | / / (%%%%%%) (%%%%%%) /%%%%)
+@| | |  |   / / \ \    | |_| |  | |/ /    |%%|     |%%|   \%\   
+@| | |  |  / /___\ \   | __  |  |   \     |%%|     |%%|    %%%%)
+@| |_|  | / /     \ \  | | \ \  | |\ \    |%%|     |%%|   /%/   
+@|_____/ /_/       \_\ |_|  \_\ |_| \_\ (%%%%%%)   |%%|   \%%%%)
+@---------------------------------------------------------------
+@start typing----meow                                           
 ;544 byte offset
 
-resby 2048;character buffer
+#RESBY 2048;character buffer
 
 >render
 
@@ -51,7 +44,7 @@ andi r2,63,r2
 <disp_ascii
 call
 <render_loop
-cmpi r3,2560
+cmpi r3,40
 bgei 1
 jmp
 ret
@@ -67,11 +60,15 @@ ret
 cmpi r0,0
 bei -2
 cmpi r0,8
+bnei 3
+
+
 TODO: backspace character and character addition to temp buffer
 
 
 <render
 call
 
-<startlabela
+<startlabel
+jmp
 

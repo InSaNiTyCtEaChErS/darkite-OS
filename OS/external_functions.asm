@@ -14,8 +14,9 @@
 
 ;print_string
 ;display_pixel
-;use_port
-:spawn_terminal
+;write_port
+;read_port
+;spawn_terminal
 ;resize_terminal
 ;kill_terminal
 
@@ -29,7 +30,7 @@
 ;pointer:r1-2
 ;length: r3
 ;terminal to print to: r4
-
+  
 
 ret
 
@@ -38,11 +39,17 @@ ret
 ;x: r1
 ;y: r2
 ;color(32 bit): r3
-
-
+push r4
+    <framebuffer
+    addi r1,0,r4
+        ;multiply x by y and add that
+        add r1,r4,r1
+    cmp r2,0
+    bgi -3
+pull r4
 ret
 
->use_port
+>write_port
 ;takes a port to use, pointer to data, and a data length
 ;pointer: r1-2
 ;length: r3
@@ -50,6 +57,15 @@ ret
 
 
 ret
+
+
+>read_port
+;port to use: r4
+;pointer to empty data: r1-2
+
+
+ret
+
 
 >spawn_terminal
 ;spawn a terminal at an x,y position with width and height w,z

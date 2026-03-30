@@ -90,8 +90,15 @@ refer to **hidden registers** and **memory map.md**
     bb		#branch if a is below b. takes one register argument as the amount to branch (signed).
     
     EXTRA 	#various extras, mainly for the OS
-   
-    TODO: ADD THESE PROPERLY
+
+    load    #load a byte from program memory/ram/mmio
+    store   #store a byte to program memory/ram/mmio
+    cmp     #compare two registers, or a register and an immediate.
+    call    #call to the pointer, pushing pc
+    ret     #return from a function or interrupt
+    inte    #set the interrupt index
+    lui     #load upper immediate to a register
+    unused  #literally... just unused atm
 
 
 ### instructions are formatted like this: (all arguments are optional except opcode)

@@ -101,8 +101,11 @@ r30 and r31 are hardwired to be the **pointer** register, with the upper 16 bits
     key     #set the instruction for keyboard interrupts to jump to
 
     read    #read an interrupt value to a register
+    jaltp   #jump and link to pointer
+    itpat   #interrupt to pointer(chosen by immediate) after n cycles
+    cs      #context switch to immediate, switches which register bank we're working with
     
-### instructions are formatted like this: (all arguments are optional except opcode)
+### instructions are formatted like this: 
 
     opcode rs1,rs2,rd
     or

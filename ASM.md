@@ -30,11 +30,13 @@ interrupts also set the special INTE register which can be read from with a READ
 ### name and value
 | name | value | info |
 | ---- | ----- | ----------------- |
-| cs | 0 | sets the previous context value. return to go back to the last used context |
-| reserved | 1-2 | RESERVED. DO NOT USE. |
-| keyboard | 3 | sets the inte register to the key pressed |
-| reserved | 4-14 | RESERVED. DO NOT USE. |
-| cycle_count | 15 | counts cycles. should only be used as a safety check |
+| invalid inst | 0 | invalid instruction interrupt |
+| cs | 1 | sets the previous context value. return to go back to the last used context |
+| overflow s | 2 | stack overflow interrupts |
+| overflow f | 3 | function pointer overflow |
+| keyboard | 4 | sets the inte register to the key pressed |
+| reserved | 5-14 | RESERVED. DO NOT USE. |
+| cycle_count | 15 | counts cycles. should only be used as a safety check in loops |
     
 
 .

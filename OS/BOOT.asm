@@ -1,30 +1,74 @@
-brai 6 ;4 byte skipped space at begining of file
-{3};3 tags
-{1};tag length 1(4 bytes)
-@os  ;tag
-{1};tag length 1(4 bytes)
-@.exe;tag
-{3};tag length 3(12 bytes)
-@immutable   ;tag, comment used for proper parsing
-brai 15
-;code goes here
-;file table goes on byte 128 (aka after 32 instructions)
-key r0 
-cmpi r0,-1
-bnei 6
-<INVALID_ISNT
-jmp
-<interrupt_matrix
-jmp
-<terminal
-jmp
-nop
-nop
-{255};invalid instruction to trigger interrupt if it gets this far
-{255}
-{255}
-{255}
-printcount
+#CONST x = r1
+#CONST y = r2
+#CONST offset = r3
+#CONST index = r4
+#CONST scroll = r5
+#CONST temp = r6
+#MACRO clear %a = sub %a,%a,%a
 
 
-resby 2048
+
+<code
+jmp
+
+>__terminal_load_text
+@______       ___      ______   __   __                         ;
+@|  _  \     / _ \     |  _  |  | | / / (%%%%%%) (%%%%%%) /%%%%|;
+@| | |  |   / / \ \    | |_| |  | |/ /    |%%|     |%%|   \%\   ;
+@| | |  |  / /___\ \   | __  |  |   \     |%%|     |%%|    %%%%|;
+@| |_|  | / /     \ \  | | \ \  | |\ \    |%%|     |%%|   /%/   ;
+@|_____/ /_/       \_\ |_|  \_\ |_| \_\ (%%%%%%)   |%%|   \%%%%|;
+@---------------------------------------------------------------;
+@start typing----meow                                           ;
+>__character_buffer
+resby 8192;reserve 128 lines of space
+
+>framebuffer
+#RESBY 2048;reserve enough space for a 64*32 terminal
+
+>__render_loop
+
+;make x and y into offset
+roli y,6,offset
+or offset,x,offset
+;we now have offset containing the bits: yyyyyyyyyyyyyyyyyyyyyyyyyyxxxxxx
+;add the offset of the raw text data
+<__terminal_load_text
+addi r29,offset,offset
+;offset is where we read from, index is the limit to stop printing
+addi offset,512,index
+
+
+;incrememt x
+addi x,1,x
+andi x,64,temp
+rori temp,6,temp
+addi y,temp,y
+
+
+>__boot_code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+>__font

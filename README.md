@@ -33,7 +33,7 @@ example:
 ```
 ### #CONST:
 ```
-#CONST name = register
+#CONST name = register/immediate
 name can be any continuous string of ascii excluding spaces. AVOID REGISTER NAMES.
 note: the program does not differentiate immediate and register constants. you do.
 ```
@@ -45,8 +45,7 @@ example:
 ### {int}
 ```
 {0}
-insert 8-bit integers directly into data. MAKE SURE TO KEEP DATA DOUBLE WORD ALIGNED.
-PC CANNOT BRANCH OR JUMP OFF OF WORD ALIGNMENT.
+insert 8-bit integers directly into data. 
 ```
 example:
 ```
@@ -58,8 +57,7 @@ example:
 ### @characters
 ```
 @I AM A STRING!!!
-insert 8-bit ascii characters directly into data. MAKE SURE TO KEEP DATA DOUBLE WORD ALIGNED.
-PC CANNOT BRANCH OR JUMP OFF OF WORD ALIGNMENT.
+insert 8-bit ascii characters directly into data.
 
 THESE INCLUDE ANY TRAILING SPACES
 ```

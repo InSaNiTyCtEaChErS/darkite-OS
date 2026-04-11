@@ -29,7 +29,7 @@ branches also go by instruction, with current instruction included for backwards
 .
 ### interrupts
 
-Interrupts jump to a manually set address, unique to each of the 256 interrupts.
+Interrupts jump to a manually set address, unique to each of the 64 interrupts.
 
 interrupts also set the special INTE register which can be read from with a READ instruction.
 

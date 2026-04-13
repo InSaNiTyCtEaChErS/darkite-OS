@@ -1,0 +1,19 @@
+#include <stdlib>               // include a whole standard library, full of useful functions TODO: ADD THESE
+#include <types>                // include a basic types library. includes i8-64 and u8-64
+#cflags  0 0 1 1 1 1            // set some cpmpiler flags. in this case, disables function overloading and name overloading
+
+#def pi = 3
+
+def u32 a(x){ // the tabs here are unnecessary, and stripped out when parsing
+    x += 1;
+    return(x);
+}
+
+tprint("Hi"); // print to an external terminal using a serial protocol. implemented in hardware
+
+u32 x = pi // set x to a constant
+
+
+tprint(x); // x is 3
+x=a(x);
+tprint(x); // x is now 4

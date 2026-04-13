@@ -90,4 +90,16 @@ example
 ```
 resby 512 ;reserves 512 bytes for whatever
 ```
+### /01010101
+```
+add some bits directly into the stream. should be branched or jumped over, unless you are using this to encode weird instructions.
+DO NOT PUT SPACES IN THE STRING. IT WILL BREAK THE SIM.
+```
+example
+```
+/00110001
+```
 
+# example codes for the language
+
+script/example.txt

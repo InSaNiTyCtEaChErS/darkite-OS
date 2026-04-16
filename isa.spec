@@ -1,9 +1,7 @@
 [fields]
 
-// i signifies immediate value is used
-
 reg
-r0  00000
+zr  00000 //hardwired to zero
 r1  00001
 r2  00010
 r3  00011
@@ -33,211 +31,191 @@ r26 11010
 r27 11011
 r28 11100
 r29 11101
-r30 11110
-flags 11111
+imm 11110   //DO NOT USE. HARDWIRED TO IMMEDIATE BITS
+flags 11111 //hardwired to the 4 flags. carry, eq, low,  less (unsigned, signed)
 
 
 alu
-add 00000
-awc 00001
-sub 00010
-swc 00011
-nand 00100
-and 00101
-rol 00110
-ror 00111
-or  11010
+and 0000 //and two values
+shl 0001 //not input a
+or  0010 //or two values
+xor 0011 //xor two values
+add 0100 //add two values
+awc 0101 //add with carry flag
+unu 0110
+unu 0111
+andn 1000 //and with not of second value
+unu  1001 
+orn  1010 //or with not of second value
+xnor 1011 //xnor two values
+sub  1100 //subtract two values
+swc  1101 //subtract with carry flag
+unu  1110 
+unu  1111 
 
 bra
-bra 01001
-be  01010
-bne 01011
-bl  01100
-bg  01101
-bb  01110
-ba  01111
-
+nop 0000
+bra 0001 //branch always
+beq 0010 //branch equal
+bne 0011 //branch not equal
+bl  0100 //branch less (signed)
+bge 0101 //branch greater equal
+ble 0110 //branch less equal
+bg  0111 //branch greater
+bb  1000 //branch below (unsigned)
+bae 1001 //branch above equal
+bbe 1010 //branch below equal
+ba  1011 //branch above
+unu 1100
+unu 1101
+unu 1110
+unu 1111
 
 
 [instructions]
 
 /*
-0:7 ALU //ALU operations
-8 JUMP  //absolute jump
-9:15 BRA //branches(and conditionals)
-16 LOAD  //load from a cache page
-17 STORE //store to a cache page
-18 CACHE // cache a page of ram or hdd
-19 SHOVEL // shovel a page of cache back to ram or hdd
-20 CALl  // call a function
-21 RET   // return from a function or interrupt
-22 INTE  // set the interrupt destination for a type of interrupt
-23 CMP   // compare
-24 SUPC  // set user program counter
-25 LUI   //load upper immediate
-26 OR    //or two values together
-27 USER  //set to user mode
-28 push  //push a register
-29 pull  //pull a register
-30 IOBIT //send or receive a single bit of i/o
-31 HALT  // HALTS THE CPU
+* OPERATIONS & OPCODE
+* 0:15 ALU
+* 16:31 BRA
+* 32 load  // load from cache
+* 33 store // store to cache
+* 34 inte  // set an interrupt address
+* 35 iread // read an interrupt value
+* 36 out   // output a byte to OUT
+* 37 biin  // bidirectionally read a byte in
+* 38 biout // bidirectionallly write a byte out
+* 39 LUI   // RISC-V like load upper immediate instruction
+* 40 cmp   // compare two registers.
+* 41 call  // call to a label
+* 42 ret   // return from a label or interrupt
+* 43 push  // push a value to stack
+* 44 pull  // pull a value from stack
+* 45 user  // switch back to user mode and reset the timer for switching to kernel mode
+* 46 
+* 47
+*/
+
+/*
+* INTERUPT TYPES AND VALUES     value produced: (16 bit, sign extended to 32)
+* 0 INVALID INSTRUCTION         -1
+* 1 EXTERNAL MEMORY READ DONE   value of byte read
+* 2 STACK OVER/UNDERFLOW		-2
+* 3 FP OVER/UNDERFLOW			-3
+* 4 KEYBOARD					ACSCII value of pressed key (0-255)
+* 5-15 RESERVED FOR FUTURE USE  undecided
 */
 
 
 
+//NOTES:
 
+/*
+* reset being held for one cycle indicates memory read done
+* reset being held for two cycles indicates keyboard input
+* reset being held for 3+ cycles indicates an interrupt value associated with the number of cycles held.
+- beyond 15 triggers a proper reset
+*/
 
-//alu ------------------------------------------------------
-%a(alu) %b(reg), %c(reg), %d(reg)
-00000000000aaaaa0dddddcccccbbbbb
-
-%a(alu)i %b(reg), %c(immediate), %d(reg)
-cccccccccccaaaaa1dddddcccccbbbbb
-
-
-//interrupts------------------------------------------------
-
-inte %b(reg), %a(reg) 
-0000000000010110000000aaaaabbbbb
-// set the current address to an interrupt of a chosen value
-
-intei %a(reg), %b(immediate)
-bbbbbbbbbbb10110100000bbbbbaaaaa
-
-
-
-//memory operations ------------------------------------------
-
+//memory operations
 load %a(reg), %b(reg)
-0000000000010000000000bbbbbaaaaa
+00000000000100000bbbbbaaaaa00000
+//load from address %a to regisster %b
 
 loadi %a(immediate), %b(reg)
-aaaaaaaaaaa10000000000bbbbbaaaaa
+aaaaaaaaaaa100000bbbbb1111000000
+//load from address %a to regisster %b
 
 store %a(reg), %b(reg)
-0000000000010001000000bbbbbaaaaa
+0000000000010000100000aaaaabbbbb
+//store value %b at address %a
 
 storei %a(immediate), %b(reg)
-aaaaaaaaaaa10001100000bbbbbaaaaa
+aaaaaaaaaaa1000010000011110bbbbb
+//store value %b at address %a
 
 
-//cache loads use pointer as where to load or store from/to, and rs1/imm as where to put it in cache
-cache %a(reg)
-0000000000010010000000aaaaa00000
+//interrupts
+inte %b(reg), %a(reg)
+0000000000010001000000bbbbbaaaaa
+//set interrupt %b to address %a
 
-cachei %a(immediate)
-aaaaaaaaaaa10010000000aaaaa00000
-
-shovel %a(reg)
-0000000000010011000000aaaaa00000
-
-shoveli %a(immediate)
-aaaaaaaaaaa10011000000aaaaa00000
+intei %b(reg), %a(immediate)
+aaaaaaaaaaa10001000000bbbbb11110
+//set interrupt %b to address %a
 
 
+//Input/Output
 
-//special ----------------------------------------------------------------------------
+iread %a(reg)
+00000000000100011aaaaa0000000000
+//read an interrupt's value
 
-cmp %a(reg),%b(reg)
-0000000000010111000000bbbbbaaaaa
+out %a(reg), %b(reg)
+0000000000010010000000aaaaabbbbb
+//output a byte from %a, shifted right by 8*%b
 
-cmpi %a(reg),%b(immediate)
-bbbbbbbbbbb10111100000bbbbbaaaaa
+outi %a(reg), %b(immediate)
+bbbbbbbbbbb10010000000aaaaa11110
+//output a byte from %a, shifted right by 8*%b
+
+biin %a(reg)
+00000000000100101aaaaa0000000000
+//bidirectional INPUT read
+
+biout %a(reg)
+000000000001001100000000000aaaaa
+//bidirectional OUTPUT write
+
+lui %a(immediate) %b(reg)
+aaaaaaaaaaa100111bbbbbaaaaa00000
+//load upper immediate. encoded specially.
+
+//special
+
+cmp %a(reg), %b(reg)
+0000000000010100000000aaaaabbbbb
+//compare two registers and set flags
+
+cmpi %a(reg), %b(immediate)
+bbbbbbbbbbb10100000000aaaaa11110
+//compare a register and immediate, and set flags.
 
 call 
-00000000000101000000000000000000
+00000000000101001000000000000000
+//call the function in pointer
 
 ret
 00000000000101010000000000000000
-
-lui %a(reg), %b(immediate)
-bbbbbbbbbbb110001 %a[4:0]bbbbb%a[4:0]
-
-<%a(label|immediate)
-%b = %a
-%c = %a[31:16]
-00000000000 00010 0 11110 11110 11110 bbbbbbbbbbb 000001 11110 bbbbb 11110 ccccccccccc 11000 1 11110 ccccc 11110
-
-HALT 
-00000000000111110000000000000000
-// halts the cpu.
-
-user 
-00000000000110110000000000000000
-// switch the OS to user mode and continue executing.
-
+//return from a function
 
 push %a(reg)
-0000000000011100000000aaaaa00000
-
-pushi %a(reg)
-aaaaaaaaaaa11100100000aaaaa00000
+000000000001010110000000000aaaaa
+//push a register to the stack
 
 pull %a(reg)
-00000000000111010aaaaa0000000000
+00000000000101100aaaaa0000000000
+//pull a register from the stack
 
-iobit %a(reg), %b(reg)
-00000000000111100bbbbbaaaaa00000
-// use %a for source and %b for dest. basically a second memory space, just in serial format.
-
-iobiti %a(immediate), %b(reg)
-aaaaaaaaaaa111100bbbbbaaaaa00000
+user
+00000000000101101000000000000000
+//switch to user mode and continue executing. should be followed by a RET instruction
 
 
-supc %a(reg)
-0000000000011000000000aaaaa00000
-// set user pc to a register
+//alu
+%a(alu) %b(reg), %c(reg), %d(reg)
+0000000000000aaaadddddcccccbbbbb
+//perform the alu operation %a on the registers %b and %c, and store it at %d
 
-supci %a(immediate)
-aaaaaaaaaaa11000000000aaaaa00000
-// set user pc to an immediate
+%a(alu)i %b(reg), %c(immediate), %d(reg)
+ccccccccccc00aaaaddddd11110bbbbb
+//perform the alu operation %a on the register %b and immediate %c, and store it at %d
 
-//pc operations ---------------------------------------------
-jmp
-00000000000010000000000000000000 
-// jumps to the pointer
-
+//bra
 %a(bra) %b(reg)
-00000000000aaaaa000000bbbbb00000
+0000000000001aaaa00000bbbbb00000
 //branches forwards or backwards a signed ammount
 
 %a(bra)i %b(immediate)
-bbbbbbbbbbbaaaaa100000bbbbb00000
-
-
-store %a(reg), %b(reg)
-0000000000010001000000aaaaabbbbb
-
-storei %a(immediate), %b(reg)
-aaaaaaaaaaa10001100000aaaaabbbbb
-
-//cache loads use pointer as where to load or store from/to, and rs1/imm as where to put it in cache
-cache %a(reg)
-0000000000010010000000aaaaa00000
-
-cachei %a(immediate)
-aaaaaaaaaaa10010000000aaaaa00000
-
-shovel %a(reg)
-0000000000010011000000aaaaa00000
-
-shoveli %a(immediate)
-aaaaaaaaaaa10011000000aaaaa00000
-
-cmp %a(reg),%b(reg)
-00000000000101000aaaaabbbbb00000
-
-cmpi %a(reg),%b(immediate)
-bbbbbbbbbbb101001aaaaabbbbb00000
-
-call 
-00000000000101010000000000000000
-
-ret
-00000000000101100000000000000000
-
-inte %a(reg), %b(reg)
-00000000000101110aaaaabbbbb00000
-
-intei %a(reg), %b(immediate)
-bbbbbbbbbbb101111aaaaabbbbb00000
+bbbbbbbbbbb01aaaa000001111000000
+//branches forwards or backwards a sign-extended immediate ammount

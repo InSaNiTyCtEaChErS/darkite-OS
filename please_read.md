@@ -4,20 +4,22 @@
 
 Branch: a RELATIVE jump.
 
+any time multiple register numbers are listed with a - between them, both numbers are included.
+
 .
 ### Quirks/features:
 
 interrupts use a 4 bit value to decide where to go. refer to **name and value** for this information.
 
-any instruction with a greater than 32 "immediate" without the immediate bit set raises a 0 value interrupt.
+any instruction with a non-zero 11 bit immediate without r30 being selected(immediate register) triggers an interrupt
 
-this is to jump back to a safe location on hitting garbage data. there is a 1 in 2 chance this works per instruction.
+this is to jump back to a safe location on hitting garbage data. there is a 1 in 32 chance this doesn't work per "instruction" of random data.
 
 .
 
 immediates are always sign extended from 11 or 21 bits to 32 bits
 
-no paging, cache is one contiguous memory block
+no paging, cache is one contiguous memory block. you canot load/store from memory directly.
 
 PC is 16-bit and counts by four.
 branches go by instruction, with current instruction included for backwards branches
@@ -27,7 +29,8 @@ branches go by instruction, with current instruction included for backwards bran
 
 there are two different operating modes.
 
-USER MODE: restricted to ALU, branches, and other basic instructions. check isa.spec for more info. cannot load and store to/from cache or branch to the lower half of cache (kernel space)
+USER MODE: restricted to ALU, branches, and other basic instructions. check isa.spec for more info. 
+user mode cannot load and store to/from cache or branch to the lower half of cache (kernel space) or read I/O registers
 
 KERNEL MODE: allowed to use any instruction.
 .
@@ -42,7 +45,7 @@ interrupts also set the special INTE register which can be read from with a READ
 | name | value | info |
 | ---- | ----- | ----------------- |
 | invalid inst | -1 | invalid instruction interrupt |
-| cs | 1 | sets the previous context value. return to go back to the last used context |
+| unused | 1 | unused |
 | unused | 2 | unused |
 | unused | 3 | unused |
 | keyboard | 4 | sets the inte register to the key pressed |
@@ -68,14 +71,20 @@ pipeline stages are:
     writeback+fetch from cache
     decode&load registers
     execute and store to temp
+
 .
 ### Registers
 
-32x 32 bit wide registers. zero register is named as ZR.
+32x 32 bit wide registers. no zero register, immediating a zero is equally fast.
+
+do not touch r29, it will be erased and overwritten by the OS on context switches.
+
+
+r22-27 are syscall input registers
 
 r28 is also known as SP
 
-r29/30 are general purpose pointer registers
+r30 shall not be used in assembly code except as a write sink. it corresponds to selecting the immediate value.
 
 r31 is also known as flags.
 
@@ -90,13 +99,6 @@ flags (flags register) are like this:
     
 
 .
-### special registers 
-(inacessible by instructions directly except where needed for the instruction to function):
-
-    interrupt registers:
-        16x 16 bit interrupt address registers.
-
-
 ### Instruction set
 
 check isa.spec (instruction specifications in plaintext format. might be a little confusing, but should be readable.)

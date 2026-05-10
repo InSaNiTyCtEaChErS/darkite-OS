@@ -2,7 +2,7 @@
 
 reg
 zr  00000 //hardwired to zero
-r1  00001
+r1  00001 //gprs
 r2  00010
 r3  00011
 r4  00100
@@ -20,41 +20,41 @@ r15 01111
 r16 10000
 r17 10001
 r18 10010
-r19 10011
-r20 10100
-r21 10101
-r22 10110
-r23 10111
-r24 11000
-r25 11001
-r26 11010
-r27 11011
-r28 11100
-r29 11101
+syslink 10011 //syscall link register.
+alr 10100  //alternate link register.
+link 10101 //link register.
+sysS 10110 //syscall registers. syscall number, arg a, arg b, pointer arg a, pointer arg b.
+sysA 10111
+sysB 11000
+sysPA0 11001
+sysPA1 11010
+sysPB0 11011
+sysPB1 11100
+ks 11101    //DO NOT USE. KERNEL WILL NULL THIS REGISTER RANDOMLY DURING EXECUTION.
 imm 11110   //DO NOT USE. HARDWIRED TO IMMEDIATE BITS
 flags 11111 //hardwired to the 4 flags. carry, eq, low,  less (unsigned, signed)
 
 
 alu
 and 0000 //and two values
-shl 0001 //not input a
+not 0001 //not input a
 or  0010 //or two values
 xor 0011 //xor two values
 add 0100 //add two values
 awc 0101 //add with carry flag
-unu 0110
-unu 0111
+shl 0110 //shift left x bits
+shr 0111 //shift right x bits
 andn 1000 //and with not of second value
 unu  1001 
 orn  1010 //or with not of second value
 xnor 1011 //xnor two values
 sub  1100 //subtract two values
 swc  1101 //subtract with carry flag
-unu  1110 
-unu  1111 
+rol  1110 //rotate left x bits
+ror  1111 //rotate right x bits
 
 bra
-nop 0000
+nop 0000 //no operation.
 bra 0001 //branch always
 beq 0010 //branch equal
 bne 0011 //branch not equal
@@ -66,156 +66,217 @@ bb  1000 //branch below (unsigned)
 bae 1001 //branch above equal
 bbe 1010 //branch below equal
 ba  1011 //branch above
-unu 1100
-unu 1101
-unu 1110
-unu 1111
+b0  1100 //useless branches
+b1  1101
+b2  1110
+jmp 1111 //jump instruction. used with branch and link instructions for calling and returning.
 
 
 [instructions]
 
 /*
-* OPERATIONS & OPCODE
-* 0:15 ALU
-* 16:31 BRA
-* 32 load  // load from cache
-* 33 store // store to cache
-* 34 inte  // set an interrupt address
-* 35 iread // read an interrupt value
-* 36 out   // output a byte to OUT
-* 37 biin  // bidirectionally read a byte in
-* 38 biout // bidirectionallly write a byte out
-* 39 LUI   // RISC-V like load upper immediate instruction
-* 40 cmp   // compare two registers.
-* 41 call  // call to a label
-* 42 ret   // return from a label or interrupt
-* 43 push  // push a value to stack
-* 44 pull  // pull a value from stack
-* 45 user  // switch back to user mode and reset the timer for switching to kernel mode
-* 46 
-* 47
+* OPERATIONS & OPCODE. FOR RESTRICTED MODE DETAILS, CHECK THE NEXT SECTION.
+*
+* 0:15 ALU %a(reg), %b(reg|imm), %c(reg) //ALU opcodes. refer to ALU field.
+* 16:31 BRA %a(reg)                      //branch opcodes. refer to BRA field.
+* 32 load %a(reg), %b(reg|imm)  // load from cache
+* 33 store %a(reg), %b(reg|imm) // store to cache
+* 34 inte %a(reg), %b(reg|imm)  // set an interrupt address
+* 35 iread %a(reg)              // read an interrupt value. unprivliged for some reason.
+* 36 out %a(reg), %b(imm)  // output a byte to OUT, shifted by %b. used for loads and stores from 
+*                               main memory to/from cache. check OUTPUT TABLE for more information.
+* 37 rpc %a(reg)           // read the 16 bit program counter
+* 38 mem %a(reg), %b(imm)  // edit the memory bounds registers. privliged. takes an immediate to decide wether 
+*                               to write/read(1/0) and wether to use register bound low or high. (0/2)
+* 39 LUI %a(reg), %b(imm)  // RISC-V like load upper immediate instruction
+* 40 cmp %a(reg), %b(reg)  // compare two registers.
+* 41 syscall               // syscall.
+* 42 sysret                // sysret. privliged.
+* 43 push %a(reg)          // push macro instruction. acts as a store whilst also incrementing sp.
+* 44 pull %a(reg)          // pull macro instruction. acts as a load whilst also decrementing sp. 
+* 45 unu                   // unused at the moment.
+* 46 lli %a(reg), %b(imm)  // load lower 21 bits of a register with an immediate
+* 47 HALT                  // halt until next reset. privliged.
+* 48  
+* 49 
+* 50
+* 51
+* 52
+* 53
+* 54
+* 55
+* 56
+* 57
+* 58
+* 59
+* 60
+* 61
+* 62
+* 63
 */
 
 /*
-* INTERUPT TYPES AND VALUES     value produced: (16 bit, sign extended to 32)
-* 0 INVALID INSTRUCTION         -1
-* 1 EXTERNAL MEMORY READ DONE   value of byte read
-* 2 STACK OVER/UNDERFLOW		-2
-* 3 FP OVER/UNDERFLOW			-3
-* 4 KEYBOARD					ACSCII value of pressed key (0-255)
-* 5-15 RESERVED FOR FUTURE USE  undecided
+* RESTRICTED INSTRUCTIONS:
+only SYSRET, INTE, and HALT are restricted in user mode. everything else is fair game.
 */
-
-
-
-//NOTES:
 
 /*
-* reset being held for one cycle indicates memory read done
-* reset being held for two cycles indicates keyboard input
-* reset being held for 3+ cycles indicates an interrupt value associated with the number of cycles held.
-- beyond 15 triggers a proper reset
+* INTERUPT TYPES AND VALUES      value produced: (16 bit, sign extended to 32)
+* 0 INVALID INSTRUCTION          -1
+* 1 EXTERNAL MEMORY READ DONE    value of byte read
+* 2 STACK OVER/UNDERFLOW		 -2
+* 3 UNPRIVLEGED INST ATTEMPTED   -3
+* 4 KEYBOARD					 ACSCII value of pressed key (0-255)
+* 5 USER MODE SWITCH             0
+* 6-15 RESERVED FOR FUTURE USE   undecided
 */
 
-//memory operations
+
+/*
+* OUTPUT TABLE
+* bits 0-2: length in bytes of the address
+* bit 3:    load/store bit
+* bit 4-6:  defines how many bytes to load (1-8)
+* bit 7:    designates if this is an error code in the following bytes
+* any following outputs are addresses.
+*/
+
+
+
+//MEMORY OPERATIONS
+
+
 load %a(reg), %b(reg)
-00000000000100000bbbbbaaaaa00000
-//load from address %a to regisster %b
+00000000 000 100000 bbbbb 00000 aaaaa 
+//loads address %a to reg %b. loads from lower half in kernel mode and upper half in user mode.
 
 loadi %a(immediate), %b(reg)
-aaaaaaaaaaa100000bbbbb1111000000
-//load from address %a to regisster %b
+aaaaaaaa aaa 100000 bbbbb 11110 00000
+//loads address %a to reg %b. loads from lower half in kernel mode and upper half in user mode.
 
 store %a(reg), %b(reg)
-0000000000010000100000aaaaabbbbb
-//store value %b at address %a
+00000000 000 100001 00000 aaaaa bbbbb 
+//stores %b at %a in cache. works on lower half in kernel mode and upper half in user mode.
 
 storei %a(immediate), %b(reg)
-aaaaaaaaaaa1000010000011110bbbbb
-//store value %b at address %a
+aaaaaaaa aaa 100001 00000 11110 bbbbb
+//stores %b at %a in cache. works on lower half in kernel mode and upper half in user mode.
 
 
-//interrupts
-inte %b(reg), %a(reg)
-0000000000010001000000bbbbbaaaaa
-//set interrupt %b to address %a
+//I/O OPERATIONS
 
-intei %b(reg), %a(immediate)
-aaaaaaaaaaa10001000000bbbbb11110
-//set interrupt %b to address %a
+inte %a(reg), %b(reg)
+00000000 000 100010 00000 aaaaa bbbbb
+//set an interrupt address to a value.
 
-
-//Input/Output
+intei %a(immediate), %b(reg)
+aaaaaaaa aaa 100010 00000 11110 bbbbb
+//set an interrupt address to a value.
 
 iread %a(reg)
-00000000000100011aaaaa0000000000
-//read an interrupt's value
+00000000 000 100011 aaaaa 00000 00000
+//read the last interrupt value.
 
 out %a(reg), %b(reg)
-0000000000010010000000aaaaabbbbb
-//output a byte from %a, shifted right by 8*%b
+00000000 000 100100 00000 bbbbb aaaaa
+//output %a shifted right by %b bytes
 
 outi %a(reg), %b(immediate)
-bbbbbbbbbbb10010000000aaaaa11110
-//output a byte from %a, shifted right by 8*%b
+bbbbbbbb bbb 100100 00000 11110 aaaaa
+//output %a shifted right by %b bytes
 
-biin %a(reg)
-00000000000100101aaaaa0000000000
-//bidirectional INPUT read
 
-biout %a(reg)
-000000000001001100000000000aaaaa
-//bidirectional OUTPUT write
+//SPECIAL OPERATIONS
 
-lui %a(immediate) %b(reg)
-aaaaaaaaaaa100111bbbbbaaaaa00000
-//load upper immediate. encoded specially.
+rpc %a(reg)
+00000000 000 100101 aaaaa 00000 00000
+//read program counter. in user mode, reads user program counter.
 
-//special
+memi %a(reg), %b(immediate)
+bbbbbbbb bbb 100110 aaaaa 11110 aaaaa
+//this instruction has no register variant. just used for setting up memory boundaries in hardware
+
+lui %a(reg), %b(immediate)
+bbbbbbbb bbb 100111 aaaaa bbbbb bbbbb
+//RV32/64I - based LUI instruction, loads upper 21 bits with a value. use an ORI after this to set the lower 11.
+
+
+//COMPARISON INSTRUCTIONS
 
 cmp %a(reg), %b(reg)
-0000000000010100000000aaaaabbbbb
-//compare two registers and set flags
+00000000 000 101000 11111 bbbbb aaaaa
+//compare two registers. stores the result to flags.
 
 cmpi %a(reg), %b(immediate)
-bbbbbbbbbbb10100000000aaaaa11110
-//compare a register and immediate, and set flags.
+bbbbbbbb bbb 101000 11111 11110 aaaaa
+//compare a register and an immediate. stores the result to flags.
 
-call 
-00000000000101001000000000000000
-//call the function in pointer
+cmps %a(reg), %b(reg), %c(reg)
+00000000 000 101000 ccccc bbbbb aaaaa
+//compare two registers. stores the result to any register
 
-ret
-00000000000101010000000000000000
-//return from a function
+cmpsi %a(reg), %b(immediate), %c(reg)
+bbbbbbbb bbb 101000 ccccc 11110 aaaaa
+//compare a register and an immediate. stores the result to any register
+
+
+
+//COMPLEX INSTRUCTIONS
+
+syscall
+00000000 000 101001 10011 00000 00000
+//syscall actually stores pc+1 in the syslink register, used in sysret
+
+sysret
+00000000 000 101010 00000 00000 10011
+//privliged SYSRET instruction. always takes the syslink register as where to return to
 
 push %a(reg)
-000000000001010110000000000aaaaa
-//push a register to the stack
+00000000 000 101011 00000 aaaaa 00000
+//push a value to the stack. can only be used in kernel mode.
+
+pushi %a(immediate)
+aaaaaaaa aaa 101011 00000 11110 00000
+//push an immediate onto the stack. can only be used in kernel mode.
 
 pull %a(reg)
-00000000000101100aaaaa0000000000
-//pull a register from the stack
+00000000 000 101100 aaaaa 00000 00000
+//pull the last-pushed value from the stack.
 
-user
-00000000000101101000000000000000
-//switch to user mode and continue executing. should be followed by a RET instruction
+lli %a(reg), %b(immediate)
+bbbbbbbb bbb 101101 aaaaa bbbbb bbbbb
+//load lower 21 bits of a register with an immediate.
+
+HALT
+00000000 000 101101 00000 00000 00000
+//halts the cpu. has to be written in all caps, unlike other instructions, which must be lowercase.
+
+
+
 
 
 //alu
 %a(alu) %b(reg), %c(reg), %d(reg)
-0000000000000aaaadddddcccccbbbbb
+00000000 000 00aaaa ddddd ccccc bbbbb
 //perform the alu operation %a on the registers %b and %c, and store it at %d
 
 %a(alu)i %b(reg), %c(immediate), %d(reg)
-ccccccccccc00aaaaddddd11110bbbbb
+cccccccc ccc 00aaaa ddddd 11110 bbbbb
 //perform the alu operation %a on the register %b and immediate %c, and store it at %d
 
 //bra
 %a(bra) %b(reg)
-0000000000001aaaa00000bbbbb00000
+00000000 000 01aaaa 00000 bbbbb 11111
 //branches forwards or backwards a signed ammount
 
 %a(bra)i %b(immediate)
-bbbbbbbbbbb01aaaa000001111000000
+bbbbbbbb bbb 01aaaa 00000 11110 11111
 //branches forwards or backwards a sign-extended immediate ammount
+
+%a(bra)L %b(reg), %c(reg)
+00000000 000 01aaaa ccccc bbbbb 11111
+//branch and link using a register
+
+%a(bra)Li %b(immediate), %c(reg)
+bbbbbbbb bbb 01aaaa ccccc 11110 11111
+//branch and link a sign-extended immediate amount

@@ -121,14 +121,15 @@ only SYSRET, INTE, and HALT are restricted in user mode. everything else is fair
 */
 
 /*
-* INTERUPT TYPES AND VALUES      value produced: (16 bit, sign extended to 32)
+* INTERUPT TYPES AND VALUES      value produced: (16 bit, sign extended to 32 bit)
 * 0 INVALID INSTRUCTION          -1
 * 1 EXTERNAL MEMORY READ DONE    value of byte read
-* 2 STACK OVER/UNDERFLOW		 -2
+* 2 STACK OVER/UNDERFLOW		     -2
 * 3 UNPRIVLEGED INST ATTEMPTED   -3
 * 4 KEYBOARD					 ACSCII value of pressed key (0-255)
 * 5 USER MODE SWITCH             0
-* 6-15 RESERVED FOR FUTURE USE   undecided
+* 6 page fault (x86-like)        -4
+* 7-15 RESERVED FOR FUTURE USE   undecided
 */
 
 
@@ -136,7 +137,8 @@ only SYSRET, INTE, and HALT are restricted in user mode. everything else is fair
 * OUTPUT TABLE
 * bits 0-2: length in bytes of the address
 * bit 3:    load/store bit
-* bit 4-6:  defines how many bytes to load (1-8)
+* bit 4-5:  defines how many bytes to load (1-4)
+* bit 6:    wired to user(1)/kernel(0) mode, unless the previous instruction was also an OUT
 * bit 7:    designates if this is an error code in the following bytes
 * any following outputs are addresses.
 */
@@ -167,11 +169,11 @@ aaaaaaaa aaa 100001 00000 11110 bbbbb
 
 inte %a(reg), %b(reg)
 00000000 000 100010 00000 aaaaa bbbbb
-//set an interrupt address to a value.
+//set an interrupt address to a value. privliged.
 
 intei %a(immediate), %b(reg)
 aaaaaaaa aaa 100010 00000 11110 bbbbb
-//set an interrupt address to a value.
+//set an interrupt address to a value. privliged.
 
 iread %a(reg)
 00000000 000 100011 aaaaa 00000 00000
@@ -179,11 +181,11 @@ iread %a(reg)
 
 out %a(reg), %b(reg)
 00000000 000 100100 00000 bbbbb aaaaa
-//output %a shifted right by %b bytes
+//output %a shifted right by %b bytes.
 
 outi %a(reg), %b(immediate)
 bbbbbbbb bbb 100100 00000 11110 aaaaa
-//output %a shifted right by %b bytes
+//output %a shifted right by %b bytes.
 
 
 //SPECIAL OPERATIONS
@@ -194,11 +196,11 @@ rpc %a(reg)
 
 memi %a(reg), %b(immediate)
 bbbbbbbb bbb 100110 aaaaa 11110 aaaaa
-//this instruction has no register variant. just used for setting up memory boundaries in hardware
+//this instruction has no register variant. just used for setting up memory boundaries in hardware. do not ask how it works.
 
 lui %a(reg), %b(immediate)
 bbbbbbbb bbb 100111 aaaaa bbbbb bbbbb
-//RV32/64I - based LUI instruction, loads upper 21 bits with a value. use an ORI after this to set the lower 11.
+//RV32/64I - based LUI instruction, loads upper 21 bits with a value. use an ORI after this to set the lower 11 bits.
 
 
 //COMPARISON INSTRUCTIONS
@@ -213,11 +215,11 @@ bbbbbbbb bbb 101000 11111 11110 aaaaa
 
 cmps %a(reg), %b(reg), %c(reg)
 00000000 000 101000 ccccc bbbbb aaaaa
-//compare two registers. stores the result to any register
+//compare two registers. stores the result to any register. stands for compare special.
 
 cmpsi %a(reg), %b(immediate), %c(reg)
 bbbbbbbb bbb 101000 ccccc 11110 aaaaa
-//compare a register and an immediate. stores the result to any register
+//compare a register and an immediate. stores the result to any register. stands for compare special immediate.
 
 
 
@@ -225,31 +227,31 @@ bbbbbbbb bbb 101000 ccccc 11110 aaaaa
 
 syscall
 00000000 000 101001 10011 00000 00000
-//syscall actually stores pc+1 in the syslink register, used in sysret
+//syscall actually stores pc+1 in the syslink register, used in sysret.
 
 sysret
 00000000 000 101010 00000 00000 10011
-//privliged SYSRET instruction. always takes the syslink register as where to return to
+//privliged SYSRET instruction. always takes the syslink register as where to return to.
 
 push %a(reg)
 00000000 000 101011 00000 aaaaa 00000
-//push a value to the stack. can only be used in kernel mode.
+//push a value to the stack. privliged.
 
 pushi %a(immediate)
 aaaaaaaa aaa 101011 00000 11110 00000
-//push an immediate onto the stack. can only be used in kernel mode.
+//push an immediate onto the stack. privliged.
 
 pull %a(reg)
 00000000 000 101100 aaaaa 00000 00000
-//pull the last-pushed value from the stack.
+//pull the last-pushed value from the stack. privliged.
 
 lli %a(reg), %b(immediate)
 bbbbbbbb bbb 101101 aaaaa bbbbb bbbbb
-//load lower 21 bits of a register with an immediate.
+//load lower 21 bits of a register with an immediate. useful for immediating numbers from 0 to 2^21-1.
 
 HALT
 00000000 000 101101 00000 00000 00000
-//halts the cpu. has to be written in all caps, unlike other instructions, which must be lowercase.
+//halts the cpu. has to be written in all caps, unlike other instructions, which must be lowercase. privliged.
 
 
 
@@ -264,19 +266,36 @@ HALT
 cccccccc ccc 00aaaa ddddd 11110 bbbbb
 //perform the alu operation %a on the register %b and immediate %c, and store it at %d
 
-//bra
+//branches
 %a(bra) %b(reg)
 00000000 000 01aaaa 00000 bbbbb 11111
-//branches forwards or backwards a signed ammount
+//branches forwards or backwards a signed ammount.
 
 %a(bra)i %b(immediate)
 bbbbbbbb bbb 01aaaa 00000 11110 11111
-//branches forwards or backwards a sign-extended immediate ammount
+//branches forwards or backwards a sign-extended immediate ammount.
 
-%a(bra)L %b(reg), %c(reg)
+%a(bra)l %b(reg), %c(reg)
 00000000 000 01aaaa ccccc bbbbb 11111
-//branch and link using a register
+//branch and link using a register.
 
-%a(bra)Li %b(immediate), %c(reg)
+%a(bra)li %b(immediate), %c(reg)
 bbbbbbbb bbb 01aaaa ccccc 11110 11111
-//branch and link a sign-extended immediate amount
+//branch and link a sign-extended immediate amount.
+
+
+%a(bra)s %b(reg), %d(reg)
+00000000 000 01aaaa 00000 bbbbb ddddd
+//branches forwards or backwards a signed ammount while also using any register instead of flags.
+
+%a(bra)si %b(immediate), %d(reg)
+bbbbbbbb bbb 01aaaa 00000 11110 ddddd
+//branches forwards or backwards a sign-extended immediate ammount while also using any register instead of flags.
+
+%a(bra)sl %b(reg), %c(reg), %d(reg)
+00000000 000 01aaaa ccccc bbbbb ddddd
+//branch and link using a register while also using any register instead of flags.
+
+%a(bra)sli %b(immediate), %c(reg), %d(reg)
+bbbbbbbb bbb 01aaaa ccccc 11110 ddddd
+//branch and link a sign-extended immediate amount while also using any register instead of flags.

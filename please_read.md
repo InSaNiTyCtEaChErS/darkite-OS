@@ -4,6 +4,8 @@
 
 Branch: a RELATIVE jump.
 
+Jump: an ABSOLUTE jump. sets pc to a value instead of adding or subtracting from it.
+
 any time multiple register numbers are listed with a - between them, both numbers are included.
 
 .

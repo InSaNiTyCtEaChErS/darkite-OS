@@ -44,20 +44,15 @@ these addresses can only be set in kernel mode.
 interrupts also set the special INTE register which can be read from with a READ instruction.
 
 ### name and value
-| name | value | info |
-| ---- | ----- | ----------------- |
-| invalid inst | -1 | invalid instruction interrupt |
-| unused | 1 | unused |
-| unused | 2 | unused |
-| unused | 3 | unused |
-| keyboard | 4 | sets the inte register to the key pressed |
-| reserved | 5-15 | RESERVED. DO NOT USE. |
+
+refer to isa.spec's section on interrupt names and values
+
     
 
 .
 ### flags
 
-refer to **memory map.md** and **special registers**
+four flags. carry, equal, low(unsigned),less(signed). the last three are exclusively for comparisons.
 
 .
 ### branch prediction
@@ -70,14 +65,14 @@ pipeline depth is 3.
 
 pipeline stages are: 
 
-    writeback+fetch from cache
-    decode&load registers
+    writeback + fetch from cache
+    decode & load registers
     execute and store to temp
 
 .
 ### Registers
 
-32x 32 bit wide registers. no zero register, immediating a zero is equally fast.
+32x 32 bit wide registers. there is one zero register, zr
 
 do not touch r29, it will be erased and overwritten by the OS on context switches.
 
@@ -89,16 +84,6 @@ r28 is also known as SP
 r30 shall not be used in assembly code except as a write sink. it corresponds to selecting the immediate value.
 
 r31 is also known as flags.
-
-### flags
-
-flags (flags register) are like this:
-
-    0: carry
-    1: eq
-    2: low
-    3: less (Signed)
-    
 
 .
 ### Instruction set

@@ -45,7 +45,7 @@ awc 0101 //add with carry flag
 shl 0110 //shift left x bits
 shr 0111 //shift right x bits
 andn 1000 //and with not of second value
-unu  1001 
+unu  1001
 orn  1010 //or with not of second value
 xnor 1011 //xnor two values
 sub  1100 //subtract two values
@@ -71,6 +71,16 @@ b1  1101
 b2  1110
 jmp 1111 //jump instruction. used with branch and link instructions for calling and returning.
 
+mem
+rll 000  //read low bound low
+rlh 001  //read low bound high
+rhl 010  //read high bound low
+rhh 011  //read high bound high
+wll 100  //write low bound low
+wlh 101  //write low bound high
+whl 110  //write high bound low
+whh 111  //write high bound high
+
 
 [instructions]
 
@@ -83,22 +93,21 @@ jmp 1111 //jump instruction. used with branch and link instructions for calling 
 * 33 store %a(reg), %b(reg|imm) // store to cache
 * 34 inte %a(reg), %b(reg|imm)  // set an interrupt address. privliged.
 * 35 iread %a(reg)              // read an interrupt value. unprivliged for some reason.
-* 36 out %a(reg), %b(imm)  // output a byte to OUT, shifted by %b. used for loads and stores from 
-*                               main memory to/from cache. check OUTPUT TABLE for more information.
+* 36 point %a(reg), %b(imm)     // set or read a pointer value
 * 37 rpc %a(reg)           // read the 16 bit program counter
-* 38 mem %a(reg), %b(imm)  // edit the memory bounds registers. privliged. takes an immediate to decide wether 
+* 38 mem %a(reg), %b(imm)  // edit the memory bounds registers. privliged. takes an immediate to decide wether
 *                               to write/read(1/0) and wether to use register bound low or high. (0/2)
-* 39 LUI %a(reg), %b(imm)  // RISC-V like load upper immediate instruction
-* 40 cmp %a(reg), %b(reg)  // compare two registers.
+* 39 LUI %a(reg), %b(imm)  // RISC-V load upper immediate instruction
+* 40 cmp %a(reg), %b(reg|imm)  // compare two registers, or a reg and an imm.
 * 41 syscall               // syscall.
 * 42 sysret                // sysret. privliged.
 * 43 push %a(reg)          // push macro instruction. acts as a store whilst also incrementing sp.
-* 44 pull %a(reg)          // pull macro instruction. acts as a load whilst also decrementing sp. 
+* 44 pull %a(reg)          // pull macro instruction. acts as a load whilst also decrementing sp.
 * 45 rupc                  // read user program counter.
 * 46 lli %a(reg), %b(imm)  // load lower 21 bits of a register with an immediate
 * 47 HALT                  // halt until next reset. privliged.
-* 48  
-* 49 
+* 48
+* 49
 * 50
 * 51
 * 52
@@ -117,7 +126,7 @@ jmp 1111 //jump instruction. used with branch and link instructions for calling 
 
 /*
 * RESTRICTED INSTRUCTIONS:
-only RUPC, SYSRET, INTE, PUSH, PULL, and HALT are restricted in user mode. everything else is fair game.
+only MEM, SYSRET, INTE, and HALT are restricted in user mode. everything else is fair game.
 */
 
 /*
@@ -129,19 +138,10 @@ only RUPC, SYSRET, INTE, PUSH, PULL, and HALT are restricted in user mode. every
 * 4 KEYBOARD					 ACSCII value of pressed key (0-255)
 * 5 USER MODE SWITCH             0
 * 6 page fault (x86-like)        -4
-* 7-15 RESERVED FOR FUTURE USE   undecided
+* 7 mouse input                  value of button
+* 8-15 RESERVED FOR FUTURE USE   undecided
 */
 
-
-/*
-* OUTPUT TABLE
-* bits 0-2: length in bytes of the address
-* bit 3:    load/store bit
-* bit 4-5:  defines how many bytes to load (1-4)
-* bit 6:    wired to user(1)/kernel(0) mode, unless the previous instruction was also an OUT
-* bit 7:    designates if this is an error code in the following bytes
-* any following outputs are addresses.
-*/
 
 
 
@@ -164,6 +164,16 @@ storei %a(immediate), %b(reg)
 aaaaaaaa aaa 100001 00000 11110 bbbbb
 //stores %b at %a in cache. stores starting at 0 in kernel mode and starting at 2^15 in user mode.
 
+point %a(reg), %b(immediate)
+%c = %a
+bbbbbbbb bbb 100100 aaaaa 11110 ccccc
+//deals with the pointer and it's associated weirdness.
+
+<%a(label)
+aaaaaaaa aaa 100111 11101 aaaaa aaaaa aaaaaaaa aaa 000010 11101 11110 11101 00000000 010 100100 00000 11110 11101 aaaaaaaa aaa 100111 11101 aaaaa aaaaa  aaaaaaaa aaa 000010 11101 11110 11101 00000000 011 100100 00000 11110 11101
+//just a very long macro to load a label.
+
+
 
 //I/O OPERATIONS
 
@@ -179,13 +189,6 @@ iread %a(reg)
 00000000 000 100011 aaaaa 00000 00000
 //read the last interrupt value.
 
-out %a(reg), %b(reg)
-00000000 000 100100 00000 bbbbb aaaaa
-//output %a shifted right by %b bytes.
-
-outi %a(reg), %b(immediate)
-bbbbbbbb bbb 100100 00000 11110 aaaaa
-//output %a shifted right by %b bytes.
 
 
 //SPECIAL OPERATIONS
@@ -198,15 +201,16 @@ rupc %a(reg)
 00000000 000 101101 aaaaa 00000 00000
 //read user program counter.
 
-memi %a(reg), %b(immediate)
-bbbbbbbb bbb 100110 aaaaa 11110 aaaaa
-//this instruction has no register variant. just used for setting up memory boundaries in hardware. 
+memi %a(reg), %b(mem)
+00000000 bbb 100110 aaaaa 11110 aaaaa
+//this instruction has no register variant. just used for setting up memory boundaries in hardware.
 //do not ask how it works.
 
 lui %a(reg), %b(immediate)
 bbbbbbbb bbb 100111 aaaaa bbbbb bbbbb
-//RV32/64I - based LUI instruction, loads upper 21 bits with a value. 
+//RV32/64I - based LUI instruction, loads upper 21 bits with a value.
 //use an ORI after this to set the lower 11 bits.
+
 
 
 //COMPARISON INSTRUCTIONS
@@ -225,7 +229,7 @@ cmps %a(reg), %b(reg), %c(reg)
 
 cmpsi %a(reg), %b(immediate), %c(reg)
 bbbbbbbb bbb 101000 ccccc 11110 aaaaa
-//compare a register and an immediate. stores the result to any register. 
+//compare a register and an immediate. stores the result to any register.
 //stands for compare special immediate.
 
 
@@ -246,11 +250,11 @@ push %a(reg)
 
 pushi %a(immediate)
 aaaaaaaa aaa 101011 00000 11110 00000
-//push an immediate onto the stack. privliged.
+//push an immediate onto the stack.
 
 pull %a(reg)
 00000000 000 101100 aaaaa 00000 00000
-//pull the last-pushed value from the stack. privliged.
+//pull the last-pushed value from the stack.
 
 lli %a(reg), %b(immediate)
 bbbbbbbb bbb 101101 aaaaa bbbbb bbbbb
@@ -311,3 +315,4 @@ bbbbbbbb bbb 01aaaa 00000 11110 ddddd
 bbbbbbbb bbb 01aaaa ccccc 11110 ddddd
 //branch and link a sign-extended immediate amount while also using 
 //any register instead of flags for the flags input.
+

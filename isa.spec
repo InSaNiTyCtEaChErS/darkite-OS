@@ -164,7 +164,7 @@ storei %a(immediate), %b(reg)
 aaaaaaaa aaa 100001 00000 11110 bbbbb
 //stores %b at %a in cache. stores starting at 0 in kernel mode and starting at 2^15 in user mode.
 
-point %a(reg), %b(immediate)
+pointi %a(reg), %b(immediate)
 %c = %a
 bbbbbbbb bbb 100100 aaaaa 11110 ccccc
 //deals with the pointer and it's associated weirdness.
@@ -257,11 +257,11 @@ pull %a(reg)
 //pull the last-pushed value from the stack.
 
 lli %a(reg), %b(immediate)
-bbbbbbbb bbb 101101 aaaaa bbbbb bbbbb
+bbbbbbbb bbb 101110 aaaaa bbbbb bbbbb
 //load lower 21 bits of a register with an immediate. useful for immediating numbers from 0 to 2^21-1.
 
 HALT
-00000000 000 101101 00000 00000 00000
+00000000 000 101111 00000 00000 00000
 //halts the cpu. has to be written in all caps, unlike other instructions, which must be lowercase. privliged.
 
 
@@ -315,4 +315,3 @@ bbbbbbbb bbb 01aaaa 00000 11110 ddddd
 bbbbbbbb bbb 01aaaa ccccc 11110 ddddd
 //branch and link a sign-extended immediate amount while also using 
 //any register instead of flags for the flags input.
-

@@ -20,10 +20,10 @@ r15 01111
 r16 10000
 r17 10001
 r18 10010
-r19 10011
-r20 10100
+scr 10011 //scratch register
+fp 10100 //frame pointer and stack pointer
 sp 10101
-lr  10110
+lr  10110 //link register + alternate link register
 alr 10111
 syslink 11000 //system call link register
 sysS 11001 //syscall ID
@@ -32,7 +32,8 @@ sysPB0 11011 //syscall pointer arg
 sysPB1 11100 //syscall pointer arg, cont.
 ks 11101    //DO NOT USE. KERNEL WILL NULL THIS REGISTER RANDOMLY DURING EXECUTION.
 imm 11110   //DO NOT USE. HARDWIRED TO IMMEDIATE BITS
-flags 11111 //hardwired to the 4 flags. carry, eq, low,  less (unsigned, signed)
+flags 11111 //hardwired to the 4 flags. carry, eq, low,  less (unsigned, signed). 
+//only has 4 bits because of this.
 
 
 alu
@@ -72,14 +73,10 @@ b2  1110
 jmp 1111 //jump instruction. used with branch and link instructions for calling and returning.
 
 mem
-rll 000  //read low bound low
-rlh 001  //read low bound high
-rhl 010  //read high bound low
-rhh 011  //read high bound high
-wll 100  //write low bound low
-wlh 101  //write low bound high
-whl 110  //write high bound low
-whh 111  //write high bound high
+rll 00  //read low bound 
+rhl 01  //read high bound 
+wll 10  //write low bound 
+whl 11  //write high bound
 
 
 [instructions]

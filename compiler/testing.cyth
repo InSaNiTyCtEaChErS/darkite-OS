@@ -1,0 +1,61 @@
+#def pi = 3 //set pi equal to 3. a sad reality.
+
+
+//single line comment test
+
+/*
+* multiline comment test
+*/
+
+//struct testing
+
+struct orange{
+    u8 fruit_index
+    char name[32]
+}
+
+struct blueberry{
+    u8 i
+    u8 j
+    u8 k
+}
+
+u32 banana = 3
+
+//globals look like this
+global u32 banana = 1
+
+//structs look like this. type is bypassed, instead using an element id
+struct u8 orange var_1  // assign a struct
+struct u8 orange var_1 [fruit_index] = 1 // assign an item of the struct to a value
+log var_1 //console log on the simulator
+
+//global structs are possible.
+struct u8 blueberry var_2
+global struct u8 blueberry var_2[i] = 11
+
+//notice that assigning a value is just an expanded form of declaring. this is because we can declare and assign a value at the same time.
+//i just don't do that here, for whatever reason
+
+
+for (i32 i=0;i<10;i32 i+=1){
+  if (i == 5){
+    continue
+  }
+  log i
+}
+
+//struct-in-struct testing
+
+struct one{
+  u8 data0 //standard data
+  u16 data1 //standard data
+}
+struct two{
+  struct one a //have a sub-struct within the struct
+  i32 data2 //stanard data
+}
+
+struct u8 two name[a][data0] = 0 //assign the data0 value of sub-struct a to 0
+
+

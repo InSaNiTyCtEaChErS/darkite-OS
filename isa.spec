@@ -20,7 +20,7 @@ r15 01111
 r16 10000
 r17 10001
 r18 10010
-scr 10011 //scratch register
+scr 10011 //scratch register, used for macros when needed
 fp 10100 //frame pointer and stack pointer
 sp 10101
 lr  10110 //link register + alternate link register
@@ -90,16 +90,16 @@ whl 11  //write high bound
 * 33 store %a(reg), %b(reg|imm) // store to cache
 * 34 inte %a(reg), %b(reg|imm)  // set an interrupt address. privliged.
 * 35 iread %a(reg)              // read an interrupt value. unprivliged for some reason.
-* 36 point %a(reg), %b(imm)     // set or read a pointer value
-* 37 rpc %a(reg)           // read the 16 bit program counter
-* 38 mem %a(reg), %b(imm)  // edit the memory bounds registers. privliged. takes an immediate to decide wether
-*                               to write/read(1/0) and wether to use register bound low or high. (0/2)
+* 36 ptr %a(reg), %b(imm)     // set or read a pointer value. privliged.
+* 37 rpc %a(reg)           // read the 32 bit program counter
+* 38 mem %a(reg), %b(imm)  // edit the memory bounds registers. privliged. takes an immediate to decide
+*                               whether to write/read(2/0) and whether to use the low or high bound
 * 39 LUI %a(reg), %b(imm)  // RISC-V load upper immediate instruction
 * 40 cmp %a(reg), %b(reg|imm)  // compare two registers, or a reg and an imm.
 * 41 syscall               // syscall.
 * 42 sysret                // sysret. privliged.
-* 43 push %a(reg)          // push macro instruction. acts as a store whilst also incrementing sp.
-* 44 pull %a(reg)          // pull macro instruction. acts as a load whilst also decrementing sp.
+* 43 user                  // switch to user mode and jump to user program counter
+* 44 supc                  // set user program counter
 * 45 rupc                  // read user program counter.
 * 46 lli %a(reg), %b(imm)  // load lower 21 bits of a register with an immediate
 * 47 HALT                  // halt until next reset. privliged.
@@ -123,27 +123,92 @@ whl 11  //write high bound
 
 /*
 * RESTRICTED INSTRUCTIONS:
-only MEM, SYSRET, INTE, and HALT are restricted in user mode. everything else is fair game.
+only MEM, SYSRET, INTE, PTR, and HALT are restricted in user mode. everything else is fair game.
 */
 
 /*
 * INTERUPT TYPES AND VALUES      value produced: (16 bit, sign extended to 32 bit)
 * 0 INVALID INSTRUCTION          -1
-* 1 EXTERNAL MEMORY READ DONE    value of byte read
+* 1 SERIAL INPUT                 value of input byte
 * 2 STACK OVER/UNDERFLOW		 -2
 * 3 UNPRIVLEGED INST ATTEMPTED   -3
 * 4 KEYBOARD					 ACSCII value of pressed key (0-255)
 * 5 USER MODE SWITCH             0
 * 6 page fault (x86-like)        -4
-* 7 mouse input                  value of button
+* 7 mouse input                  value of button(undecided)
 * 8-15 RESERVED FOR FUTURE USE   undecided
 */
 
 
 
+/*
+* #### NOTES ################################################################################
+* FLAGS
+*   carry flag is only used on awc and swc, and is stored as the lowest bit in the flags register
+*     otherwise carry is assumed to be 0.
+*   equals flag is only set/cleared on CMP and is the second lowest bit in the flags register
+*   lower flag(unsigned) is the third lowest bit in the flags register and is only set/cleared on CMP
+*   less flag(signed) is the fourth lowest bit in the flags register and is only set/cleared on CMP
+*
+* IMMEDIATE AND FLAGS LOADING
+*   immediate can only be loaded as the second argument
+*   if you try to load immediate from the first argument, it will load from a hidden "imm" register.
+*   if you try to store to "imm", it will store to this hidden register. DO NOT UTILIZE THIS.
+*     WHY? BECAUSE KERNEL WILL NOT SAVE THIS "REGISTER" FOR YOU.
+*   flags can be safely loaded as either argument, despite only being 4 bits.
+* 
+* INTERRUPT DETAILS
+*   all interrupts set the hidden kernel mode register to 0(kernel mode) and switch to kernel pc
+*     and overwrite kernel pc with a varying value if not already in kernel mode.
+*     this is equivilant to having kernel mode be an interrupt mask.
+*     IREAD still functions in kernel mode though.
+*
+*   INVALID INSTRUCTION EXCEPTION:
+*     triggered when mode(top two bits of opcode) is set to 0b11
+*
+*   SERIAL INPUT INTERRUPT:
+*     triggered whenever the serial port sends in data
+*
+*   STACK OVER/UNDERFLOW EXCEPTION:
+*     triggered when stack overflows or underflows
+*
+*   UNPRIVLIGED INST ATTEMPT EXCEPTION:
+*     triggered when user programs try to use a privliged instruction
+*
+*   KEYBOARD INTERRUPT:
+*     triggered whenever the keyboard sends a key value in ASCII.
+*
+*   USER MODE SWITCH INTERRUPT:
+*     occours after a dedicated number of cycles in user mode have passed.
+*
+*   PAGE FAULT EXCEPTION:
+*     occours whenever a program tries to write or read outside of it's memory boundaries
+*
+*   MOUSE INPUT INTERRUPT:
+*     occours whenever the mouse sends input data.
+*
+* PIPELINING + SUPERSCALAR + BRANCH PREDICTION+ OUT OF ORDER:
+*   pipelining should be split into three stages. 
+*     fetch+writeback
+*     decode+load registers
+*     execute
+*   branch prediction should predict all branches taken
+*   superscalar execution shall execute instructions in the same way as normal,
+*     just executing extra ALU operations when possible.
+*   This is not an Out Of Order architecture. there is no FENCE instruction/similar availiable.
+*
+* EXTRAS:
+*   DATA BUS WIDTH: 32 bits
+*   ALU WIDTH: 32 bits
+*   INSTRUCTION LOAD WIDTH: 32 bits
+*   DATA LOAD/STORE WIDTH: 32 bits
+*/
+
+
+// INSTRUCTION DEFINITIONS
+
 
 //MEMORY OPERATIONS
-
 
 load %a(reg), %b(reg)
 00000000 000 100000 bbbbb 00000 aaaaa 
@@ -161,10 +226,10 @@ storei %a(immediate), %b(reg)
 aaaaaaaa aaa 100001 00000 11110 bbbbb
 //stores %b at %a in cache. stores starting at 0 in kernel mode and starting at 2^15 in user mode.
 
-pointi %a(reg), %b(immediate)
+ptri %a(reg), %b(immediate)
 %c = %a
 bbbbbbbb bbb 100100 aaaaa 11110 ccccc
-//deals with the pointer and it's associated weirdness.
+//deals with the pointer and it's associated weirdness. privliged.
 
 <%a(label)
 aaaaaaaa aaa 100111 11101 aaaaa aaaaa aaaaaaaa aaa 000010 11101 11110 11101 00000000 010 100100 00000 11110 11101 aaaaaaaa aaa 100111 11101 aaaaa aaaaa  aaaaaaaa aaa 000010 11101 11110 11101 00000000 011 100100 00000 11110 11101
@@ -207,6 +272,10 @@ lui %a(reg), %b(immediate)
 bbbbbbbb bbb 100111 aaaaa bbbbb bbbbb
 //RV32/64I - based LUI instruction, loads upper 21 bits with a value.
 //use an ORI after this to set the lower 11 bits.
+
+
+
+
 
 
 
